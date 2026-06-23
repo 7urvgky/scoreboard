@@ -689,7 +689,7 @@
             
             field.innerHTML += `
                 <div class="runner" style="left: ${leftPercentage}%; z-index: ${100 - trueRank}; bottom: ${runnerBottom}px; animation: floatFast ${(1.0 + Math.random() * 1.5).toFixed(2)}s ease-in-out ${(Math.random() * -2.0).toFixed(2)}s infinite;">
-                    ${(trueRank === 1 && student.total > 0) ? `<div class="star-badge" style="top: -${imgSize/2 + 15}px;">⭐</div>` : ''}
+                    ${(trueRank === 1 && student.total > 0) ? `<div class="star-badge" style="top: -${imgSize/2 + 15}px;">👑</div>` : ''}
                     <div class="rank" style="font-size: ${Math.max(9, 11 * scale)}px;">${trueRank}등 (${student.total}점)</div>
                     <img src="${student.img}" style="width: ${imgSize}px; height: ${imgSize}px; border-width: ${Math.max(1, 3 * scale)}px;">
                     <div class="runner-name" style="font-size: ${Math.max(10, 12 * scale)}px;">${student.name}</div>
