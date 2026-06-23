@@ -33,9 +33,13 @@
     th, td { border: 1px solid #e9ecef; padding: 12px 10px; text-align: center; position: relative; }
     th { background-color: #e6f7e9; color: #2d6636; font-size: 16px; transition: background-color 0.2s; }
     
-    .student-th { cursor: grab; }
-    .student-th:active { cursor: grabbing; }
-    .student-th.drag-over { background-color: #c3e6cb; border: 2px dashed #52a05f; }
+    /* ⭐ 왕관이 자리 잡을 수 있도록 테이블 학생 헤더의 상단 여백 추가 */
+    th.student-th {
+        padding-top: 24px;
+        cursor: grab;
+    }
+    th.student-th:active { cursor: grabbing; }
+    th.student-th.drag-over { background-color: #c3e6cb; border: 2px dashed #52a05f; }
     
     .student-profile { position: relative; display: inline-block; }
     .student-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 3px solid #a8dadc; background-color: #f8f9fa; transition: transform 0.2s; }
@@ -92,6 +96,19 @@
     
     .star-badge { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.9); z-index: 10; animation: popCrown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     
+    /* ⭐ 가장 윗행(테이블 헤더) 1등 학생용 왕관 스타일 */
+    .table-crown {
+        position: absolute;
+        top: -22px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 24px;
+        text-shadow: 0 0 8px rgba(255, 215, 0, 0.9);
+        z-index: 12;
+        pointer-events: none;
+        animation: floatFast 1.5s ease-in-out infinite;
+    }
+
     /* 1열(항목명)의 행 상하 경계선에 마우스 올렸을 때 나타나는 인라인 추가 트리거 */
     .item-first-col {
         position: relative;
@@ -445,6 +462,13 @@
     function renderTable() {
         const headerRow = document.getElementById('headerRow');
         
+        // ⭐ 실시간 1등 탐색을 위해 학생들의 총점 및 최고점 미리 산출
+        let totalsMap = {};
+        students.forEach(s => {
+            totalsMap[s.id] = scores[s.id] ? Object.values(scores[s.id]).reduce((sum, val) => sum + val, 0) : 0;
+        });
+        let maxScore = Math.max(...Object.values(totalsMap), 0);
+
         // 기존 "학생 추가" 버튼 대신 맨 앞 코너 셀과 우측 삽입 트리거 추가
         headerRow.innerHTML = `
             <th style="position:relative; min-width: 100px;">
@@ -456,9 +480,15 @@
         `;
         
         students.forEach((student, index) => {
+            let totalScore = totalsMap[student.id] || 0;
+            // ⭐ 1등(최고 득점)이고 점수가 0점보다 클 때 왕관 표시 활성화
+            let isFirstPlace = (totalScore === maxScore && totalScore > 0);
+            let crownHtml = isFirstPlace ? `<div class="table-crown">👑</div>` : '';
+
             headerRow.innerHTML += `
                 <th class="student-th" draggable="true" ondragstart="handleDragStart(event, '${student.id}')" ondragover="event.stopPropagation();" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${student.id}')" ondragend="handleDragEnd(event)">
                     <div class="student-profile" draggable="false">
+                        ${crownHtml}
                         <img src="${student.img}" class="student-img" onclick="toggleMenu(event, '${student.id}')" draggable="false">
                         <div class="student-menu" id="menu-${student.id}">
                             <button onclick="triggerFileInput('${student.id}')">📷 이미지 변경</button>
@@ -683,7 +713,7 @@
         totals.forEach(student => {
             let trueRank = sortedTotals.filter(s => s.total > student.total).length + 1;
             
-            // ⭐ 정밀 순위별 비율 세팅:
+            // 정밀 순위별 비율 세팅:
             // 1등: 100% (76.8px) 단독적 대형 크기
             // 2등: 1등의 70% (scale: 0.7)
             // 3등부터 꼴등까지: 2등의 70%부터 꼴등(이전 기본 꼴등 비율인 25%의 70% = 17.5%)까지 점진적 축소
