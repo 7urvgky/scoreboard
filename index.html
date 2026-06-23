@@ -79,7 +79,7 @@
         100% { transform: translate(-50%, 0px); }
     }
 
-    @keyframes popStar {
+    @keyframes popCrown {
         0% { transform: translateX(-50%) scale(0) rotate(-15deg); }
         70% { transform: translateX(-50%) scale(1.3) rotate(10deg); }
         100% { transform: translateX(-50%) scale(1) rotate(0deg); }
@@ -90,12 +90,12 @@
     .runner .rank { background: #ff6b6b; color: white; border-radius: 10px; font-size: 10px; padding: 1px 5px; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; z-index: 5; }
     .runner-name { font-size: 11px; color: #2e7d32; font-weight: bold; margin-top: 2px; background: rgba(255,255,255,0.85); padding: 1px 4px; border-radius: 8px; display: inline-block; white-space: nowrap; }
     
-    .star-badge { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.9); z-index: 10; animation: popStar 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .star-badge { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.9); z-index: 10; animation: popCrown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     
     /* 1열(항목명)의 행 상하 경계선에 마우스 올렸을 때 나타나는 인라인 추가 트리거 */
     .item-first-col {
         position: relative;
-        padding-left: 20px; /* 왼쪽에 삭제 버튼이 들어갈 충분한 여백 확보 */
+        padding-left: 20px; 
     }
     .row-insert-trigger {
         position: absolute;
@@ -152,7 +152,7 @@
         transform: scale(1);
     }
 
-    /* ⭐ 1열 왼쪽에 마우스 호버 시 떠오르는 행 삭제 트리거 영역 */
+    /* 1열 왼쪽에 마우스 호버 시 떠오르는 행 삭제 트리거 영역 */
     .row-delete-trigger {
         position: absolute;
         left: -5px;
@@ -187,7 +187,7 @@
         transform: scale(1);
     }
 
-    /* ⭐ 1행(학생/열) 좌우 경계선에 마우스 올렸을 때 나타나는 인라인 학생 추가 트리거 */
+    /* 1행(학생/열) 좌우 경계선에 마우스 올렸을 때 나타나는 인라인 학생 추가 트리거 */
     .col-insert-trigger {
         position: absolute;
         top: 0;
@@ -310,7 +310,7 @@
     let studentCounter = 1; 
     let items = [{ id: 'item1', name: '숙제' }, { id: 'item2', name: '발표' }];
     let scores = {}; 
-    let logs = [];
+    let logs = []; // 전체 로그 히스토리 배열
     let currentTargetStudentId = null;
     let draggedStudentId = null; 
     let currentFileHandle = null; 
@@ -361,13 +361,15 @@
         }
     });
 
+    // 백업 시 로그 정보(logs)도 포함하여 저장
     function backupToLocal() {
         try {
-            const data = { title: document.getElementById('mainTitle').innerText, students, items, scores, studentCounter };
+            const data = { title: document.getElementById('mainTitle').innerText, students, items, scores, studentCounter, logs };
             localStorage.setItem('recentScoreboardData', JSON.stringify(data));
         } catch (e) {}
     }
 
+    // 복구 시 이전 로그 기록 복원
     function loadRecentWork() {
         const dataStr = localStorage.getItem('recentScoreboardData');
         if (dataStr) {
@@ -375,7 +377,11 @@
                 try {
                     const data = JSON.parse(dataStr);
                     document.getElementById('mainTitle').innerText = data.title || "🏆 우리 반 점수판 🏆";
-                    students = data.students || []; items = data.items || []; scores = data.scores || {}; studentCounter = data.studentCounter || 1;
+                    students = data.students || []; 
+                    items = data.items || []; 
+                    scores = data.scores || {}; 
+                    studentCounter = data.studentCounter || 1;
+                    logs = data.logs || []; // 로그 데이터 복구
                     addLog("임시 백업본을 성공적으로 불러왔습니다!");
                     render();
                 } catch (e) {}
@@ -439,7 +445,7 @@
     function renderTable() {
         const headerRow = document.getElementById('headerRow');
         
-        // ⭐ 기존 "학생 추가" 버튼 대신 맨 앞 코너 셀과 우측 삽입 트리거 추가
+        // 기존 "학생 추가" 버튼 대신 맨 앞 코너 셀과 우측 삽입 트리거 추가
         headerRow.innerHTML = `
             <th style="position:relative; min-width: 100px;">
                 항목 / 학생
@@ -451,7 +457,7 @@
         
         students.forEach((student, index) => {
             headerRow.innerHTML += `
-                <th class="student-th" draggable="true" ondragstart="handleDragStart(event, '${student.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${student.id}')" ondragend="handleDragEnd(event)">
+                <th class="student-th" draggable="true" ondragstart="handleDragStart(event, '${student.id}')" ondragover="event.stopPropagation();" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${student.id}')" ondragend="handleDragEnd(event)">
                     <div class="student-profile" draggable="false">
                         <img src="${student.img}" class="student-img" onclick="toggleMenu(event, '${student.id}')" draggable="false">
                         <div class="student-menu" id="menu-${student.id}">
@@ -461,7 +467,7 @@
                     </div><br>
                     <div class="student-name" onclick="editStudentName('${student.id}', this)">${student.name}</div>
                     
-                    <!-- ⭐ 우측 경계선 학생 추가 트리거 -->
+                    <!-- 우측 경계선 학생 추가 트리거 -->
                     <div class="col-insert-trigger col-insert-right" onmousedown="event.stopPropagation();" onclick="event.stopPropagation(); insertStudentAt(${index + 1});" title="여기에 학생 추가">
                         <div class="col-insert-circle">+</div>
                     </div>
@@ -470,7 +476,7 @@
 
         const scoreBody = document.getElementById('scoreBody'); scoreBody.innerHTML = '';
         
-        // ⭐ 항목이 하나도 없을 때 처리
+        // 항목이 하나도 없을 때 처리
         if (items.length === 0) {
             let tr = document.createElement('tr');
             tr.className = 'empty-items-row';
@@ -575,6 +581,7 @@
         }
     }
 
+    // 개별 점수 증감
     function updateScore(studentId, itemId, amount) {
         if (!scores[studentId]) scores[studentId] = {};
         const newScore = (scores[studentId][itemId] || 0) + amount;
@@ -585,6 +592,7 @@
         updateTotalsUI(); renderRace(); backupToLocal(); 
     }
 
+    // 일괄 점수 증감
     function addAllScore(itemId, amount) {
         students.forEach(student => {
             if (!scores[student.id]) scores[student.id] = {};
@@ -597,7 +605,7 @@
         updateTotalsUI(); renderRace(); backupToLocal(); 
     }
 
-    // ⭐ 특정 위치(index)에 학생(열)을 삽입하는 함수
+    // 특정 위치(index)에 학생(열)을 삽입하는 함수
     function insertStudentAt(index) {
         const id = 'std_' + Date.now(); 
         const name = `학생${studentCounter++}`;
@@ -642,7 +650,7 @@
         backupToLocal();
     }
 
-    // ⭐ 특정 위치의 항목 삭제 기능 함수 추가
+    // 특정 위치의 항목 삭제 기능 함수 추가
     function deleteItemAt(index) {
         const item = items[index];
         if (confirm(`'${item.name}' 평가 항목을 정말로 삭제할까요?\n(등록된 학생들의 해당 평가 점수도 모두 함께 삭제됩니다.)`)) {
@@ -661,8 +669,9 @@
     }
     
     function updateItemName(id, newName) { items.find(i => i.id === id).name = newName; backupToLocal(); }
-    function resetScores() { if (confirm("모두 초기화?")) { scores = {}; addLog(`초기화 완료`); render(); backupToLocal(); } }
+    function resetScores() { if (confirm("모두 초기화?")) { scores = {}; addLog("초기화 완료"); render(); backupToLocal(); } }
 
+    // 레이스 드로잉 및 정밀 크기 조절
     function renderRace() {
         const field = document.getElementById('raceTrackField'); field.innerHTML = '';
         if (students.length === 0) return;
@@ -673,12 +682,30 @@
         
         totals.forEach(student => {
             let trueRank = sortedTotals.filter(s => s.total > student.total).length + 1;
-            let scale = maxTrueRank > 1 ? 1 - ((trueRank - 1) / (maxTrueRank - 1)) * 0.75 : 1;
-            let imgSize = 64 * scale; 
+            
+            // ⭐ 정밀 순위별 비율 세팅:
+            // 1등: 100% (76.8px) 단독적 대형 크기
+            // 2등: 1등의 70% (scale: 0.7)
+            // 3등부터 꼴등까지: 2등의 70%부터 꼴등(이전 기본 꼴등 비율인 25%의 70% = 17.5%)까지 점진적 축소
+            let scale = 1;
+            if (trueRank === 1) {
+                scale = 1.0;
+            } else if (trueRank === 2) {
+                scale = 0.7;
+            } else if (maxTrueRank > 2) {
+                let minScale = 0.25 * 0.7; // 기존 꼴등 비율(25%)의 70%인 17.5% (0.175)
+                let ratio = (trueRank - 2) / (maxTrueRank - 2);
+                scale = 0.7 - ratio * (0.7 - minScale);
+            } else {
+                scale = 0.7;
+            }
+            
+            let imgSize = 76.8 * scale; 
             
             let leftPercentage;
-            if (trueRank === 1) leftPercentage = 50 + (Math.random() * 6 - 3);
-            else {
+            if (trueRank === 1) {
+                leftPercentage = 50 + (Math.random() * 6 - 3);
+            } else {
                 let spreadRatio = (trueRank - 1) / (maxTrueRank - 1); 
                 let distance = 10 + (spreadRatio * 30);
                 let randomJitter = (Math.random() * 10 - 5);
@@ -687,9 +714,12 @@
             leftPercentage = Math.max(5, Math.min(95, leftPercentage));
             const runnerBottom = 20 + Math.floor(Math.random() * 51) - 25; 
             
+            // 황금 왕관(👑) 장식 렌더링 코드
+            let crownBadgeHtml = (trueRank === 1 && student.total > 0) ? `<div class="star-badge" style="top: -${imgSize/2 + 15}px;">👑</div>` : '';
+
             field.innerHTML += `
                 <div class="runner" style="left: ${leftPercentage}%; z-index: ${100 - trueRank}; bottom: ${runnerBottom}px; animation: floatFast ${(1.0 + Math.random() * 1.5).toFixed(2)}s ease-in-out ${(Math.random() * -2.0).toFixed(2)}s infinite;">
-                    ${(trueRank === 1 && student.total > 0) ? `<div class="star-badge" style="top: -${imgSize/2 + 15}px;">👑</div>` : ''}
+                    ${crownBadgeHtml}
                     <div class="rank" style="font-size: ${Math.max(9, 11 * scale)}px;">${trueRank}등 (${student.total}점)</div>
                     <img src="${student.img}" style="width: ${imgSize}px; height: ${imgSize}px; border-width: ${Math.max(1, 3 * scale)}px;">
                     <div class="runner-name" style="font-size: ${Math.max(10, 12 * scale)}px;">${student.name}</div>
@@ -710,9 +740,9 @@
 
     function toggleLogs() { document.getElementById('logContainer').classList.toggle('active'); }
 
-    // Cmd+S 빠른 저장 / 파일 덮어쓰기 로직
+    // Cmd+S 빠른 저장 시 로그 정보(logs)도 동반 저장
     async function quickSaveJSON() {
-        const data = { title: document.getElementById('mainTitle').innerText, students, items, scores, studentCounter };
+        const data = { title: document.getElementById('mainTitle').innerText, students, items, scores, studentCounter, logs };
         const jsonString = JSON.stringify(data, null, 2);
 
         try {
@@ -762,11 +792,16 @@
         }
     }
 
+    // JSON 데이터를 탑재하면서 저장되어 있던 로그 리스트를 그대로 복원
     function processJSONData(text) {
         try {
             const data = JSON.parse(text);
             document.getElementById('mainTitle').innerText = data.title || "🏆 우리 반 점수판 🏆";
-            students = data.students || []; items = data.items || []; scores = data.scores || {}; studentCounter = data.studentCounter || 1;
+            students = data.students || []; 
+            items = data.items || []; 
+            scores = data.scores || {}; 
+            studentCounter = data.studentCounter || 1;
+            logs = data.logs || []; // 파일에 들고있던 로그 목록 통째로 복원
             addLog("📦 파일이 완벽하게 탑재되었습니다. (이제 Cmd+S로 빠른 덮어쓰기 가능!)", true);
             render(); backupToLocal();
         } catch (error) {
@@ -845,6 +880,3 @@
 
 </body>
 </html>
-
-
-
