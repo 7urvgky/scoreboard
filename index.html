@@ -183,6 +183,8 @@
     
     // ⭐ 다중 선택된 셀의 식별자(studentId|itemId)를 저장하는 Set
     let selectedCells = new Set(); 
+    // ⭐ 첫 번째로 클릭(포커스)한 항목을 기억하여 다중 선택 시 포함시키기 위함
+    let lastClickedCell = null;
 
     const defaultImg = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
 
@@ -211,14 +213,17 @@
 
     // 화면의 빈 공간이나 버튼 외 영역 클릭 시 선택된 셀 해제
     document.addEventListener('mousedown', function(e) {
-        if (selectedCells.size === 0) return;
+        // 단, 다중 선택 중이 아니라면 바로 빠져나감
         const isScoreInput = e.target.classList.contains('score-input');
         const isScoreBtn = e.target.closest('.btn-small'); 
         
-        // 입력창이나 +/- 버튼을 클릭한 것이 아니고 Cmd/Ctrl 키도 안 눌렀다면 다중 선택 취소
+        // 입력창이나 +/- 버튼을 클릭한 것이 아니고 Cmd/Ctrl 키도 안 눌렀다면 다중 선택 및 마지막 클릭 정보 초기화
         if (!isScoreInput && !isScoreBtn && !e.ctrlKey && !e.metaKey) {
-            selectedCells.clear();
-            document.querySelectorAll('.score-input.selected').forEach(el => el.classList.remove('selected'));
+            if (selectedCells.size > 0) {
+                selectedCells.clear();
+                document.querySelectorAll('.score-input.selected').forEach(el => el.classList.remove('selected'));
+            }
+            lastClickedCell = null; 
         }
     });
 
@@ -262,7 +267,7 @@
                     document.getElementById('mainTitle').innerText = data.title || "🏆 우리 반 점수판 🏆";
                     students = data.students || []; items = data.items || []; scores = data.scores || {}; studentCounter = data.studentCounter || 1;
                     logs = data.logs || []; 
-                    selectedCells.clear(); // 복구 시 선택 초기화
+                    selectedCells.clear(); lastClickedCell = null;
                     addLog("임시 백업본을 성공적으로 불러왔습니다!");
                     render();
                 } catch (e) {}
@@ -395,7 +400,7 @@
                     const score = (scores[student.id] && scores[student.id][item.id]) ? scores[student.id][item.id] : 0;
                     const scoreClass = score === 0 ? "score-input score-zero" : "score-input";
                     
-                    // ⭐ 해당 셀이 선택된 상태라면 selected 클래스 부여
+                    // 해당 셀이 선택된 상태라면 selected 클래스 부여
                     const isSelected = selectedCells.has(`${student.id}|${item.id}`) ? "selected" : "";
                     
                     tr.innerHTML += `<td>
@@ -434,10 +439,19 @@
         if (input) { if (value === 0) input.classList.add('score-zero'); else input.classList.remove('score-zero'); }
     }
 
-    // ⭐ 다중 선택 셀 마우스 클릭 핸들러
+    // ⭐ 다중 선택 셀 마우스 클릭 핸들러 (첫 선택 항목 포함되도록 로직 개선)
     function handleCellMouseDown(event, studentId, itemId) {
         const key = `${studentId}|${itemId}`;
         if (event.ctrlKey || event.metaKey) {
+            // 첫 다중 선택(Cmd+클릭)을 하는 시점에, 이전에 그냥 일반 클릭했던 셀이 있다면 함께 선택 그룹으로 편입
+            if (selectedCells.size === 0 && lastClickedCell) {
+                const lastKey = `${lastClickedCell.studentId}|${lastClickedCell.itemId}`;
+                selectedCells.add(lastKey);
+                const lastEl = document.getElementById(`score_${lastClickedCell.studentId}_${lastClickedCell.itemId}`);
+                if (lastEl) lastEl.classList.add('selected');
+            }
+
+            // 현재 클릭한 항목을 토글
             if (selectedCells.has(key)) {
                 selectedCells.delete(key);
                 event.target.classList.remove('selected');
@@ -446,11 +460,11 @@
                 event.target.classList.add('selected');
             }
         } else {
-            // 일반 클릭 시, 만약 클릭한 곳이 선택된 그룹 소속이 아니면 다른 선택 해제
-            if (selectedCells.size > 0 && !selectedCells.has(key)) {
-                selectedCells.clear();
-                document.querySelectorAll('.score-input.selected').forEach(el => el.classList.remove('selected'));
-            }
+            // 일반 클릭 시, 선택된 모든 하이라이트를 해제하고 현재 셀을 "최근 클릭 셀"로 기억함
+            selectedCells.clear();
+            document.querySelectorAll('.score-input.selected').forEach(el => el.classList.remove('selected'));
+            
+            lastClickedCell = { studentId, itemId };
         }
     }
 
@@ -475,7 +489,7 @@
         if (input) { input.value = newScore; updateInputColor(`score_${sId}_${iId}`, newScore); }
     }
 
-    // ⭐ 점수 직접 입력 후 갱신
+    // 점수 직접 입력 후 갱신
     function saveScore(studentId, itemId, newVal) {
         const parsed = parseInt(newVal);
         if (!isNaN(parsed)) {
@@ -499,7 +513,7 @@
         }
     }
 
-    // ⭐ 개별 +/- 버튼으로 점수 증감
+    // 개별 +/- 버튼으로 점수 증감
     function updateScore(studentId, itemId, amount) {
         const key = `${studentId}|${itemId}`;
         if (selectedCells.size > 0 && selectedCells.has(key)) {
@@ -552,11 +566,17 @@
     function deleteStudent(id) { 
         if (confirm("삭제할까요?")) { 
             students = students.filter(s => s.id !== id); delete scores[id]; 
-            selectedCells.clear(); // 선택 초기화
+            selectedCells.clear(); 
             addLog(`학생 삭제됨`); render(); backupToLocal(); 
         } 
     }
     
+    function addItem() {
+        const id = 'item_' + Date.now();
+        items.push({ id, name: "새 항목" });
+        addLog(`새 항목이 추가되었습니다.`); render(); backupToLocal();
+    }
+
     function insertItemAt(index) {
         const id = 'item_' + Date.now();
         items.splice(index, 0, { id, name: "새 항목" });
@@ -568,7 +588,7 @@
         if (confirm(`'${item.name}' 평가 항목을 정말로 삭제할까요?`)) {
             students.forEach(student => { if (scores[student.id]) delete scores[student.id][item.id]; });
             items.splice(index, 1);
-            selectedCells.clear(); // 선택 초기화
+            selectedCells.clear(); 
             addLog(`'${item.name}' 평가 항목이 삭제되었습니다.`); render(); backupToLocal();
         }
     }
@@ -577,7 +597,7 @@
     
     function resetScores() { 
         if (confirm("모두 초기화?")) { 
-            scores = {}; selectedCells.clear(); 
+            scores = {}; selectedCells.clear(); lastClickedCell = null;
             addLog("초기화 완료"); render(); backupToLocal(); 
         } 
     }
@@ -696,7 +716,7 @@
             const data = JSON.parse(text);
             document.getElementById('mainTitle').innerText = data.title || "🏆 우리 반 점수판 🏆";
             students = data.students || []; items = data.items || []; scores = data.scores || {}; studentCounter = data.studentCounter || 1;
-            logs = data.logs || []; selectedCells.clear();
+            logs = data.logs || []; selectedCells.clear(); lastClickedCell = null;
             addLog("📦 파일이 완벽하게 탑재되었습니다. (이제 Cmd+S로 빠른 덮어쓰기 가능!)", true);
             render(); backupToLocal();
         } catch (error) {
@@ -762,7 +782,7 @@
             students.push({ id, name: ret[r][0], img: ret[r][1] || defaultImg }); scores[id] = {};
             for(let i = 2; i < ret[r].length; i++) if (i - 2 < items.length) scores[id][items[i-2].id] = parseInt(ret[r][i]) || 0;
         }
-        studentCounter = students.length + 1; selectedCells.clear();
+        studentCounter = students.length + 1; selectedCells.clear(); lastClickedCell = null;
         addLog("📂 CSV 데이터를 불러왔습니다."); render(); backupToLocal(); 
     }
     
