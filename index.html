@@ -33,10 +33,17 @@
     th, td { border: 1px solid #e9ecef; padding: 12px 10px; text-align: center; position: relative; }
     th { background-color: #e6f7e9; color: #2d6636; font-size: 16px; transition: background-color 0.2s; }
     
+    /* 열(학생) 드래그 강조 효과 */
     th.student-th { padding-top: 24px; cursor: grab; }
     th.student-th:active { cursor: grabbing; }
     th.student-th.drag-over { background-color: #c3e6cb; border: 2px dashed #52a05f; }
     
+    /* ⭐ 행(항목) 드래그 강조 효과 */
+    tr.drag-over-row > td { background-color: #c3e6cb !important; border-top: 2px dashed #52a05f; border-bottom: 2px dashed #52a05f; }
+    .item-first-col { position: relative; padding-left: 20px; cursor: grab; }
+    .item-first-col:active { cursor: grabbing; }
+    .item-name { cursor: text; } /* 입력창 텍스트 커서 유지 */
+
     .student-profile { position: relative; display: inline-block; }
     .student-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 3px solid #a8dadc; background-color: #f8f9fa; transition: transform 0.2s; }
     .student-img:hover { transform: scale(1.05); }
@@ -92,7 +99,6 @@
     
     .table-crown { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 24px; text-shadow: 0 0 8px rgba(255, 215, 0, 0.9); z-index: 12; pointer-events: none; animation: floatFast 1.5s ease-in-out infinite; }
 
-    .item-first-col { position: relative; padding-left: 20px; }
     .row-insert-trigger { position: absolute; left: 0; right: 0; height: 20px; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; }
     .row-insert-top { top: -10px; } .row-insert-bottom { bottom: -10px; }
     .row-insert-trigger::before { content: ''; position: absolute; left: 5px; right: 5px; top: 50%; height: 2px; background-color: #52a05f; transform: scaleY(0); transition: transform 0.2s ease; pointer-events: none; }
@@ -179,6 +185,7 @@
     let logs = []; 
     let currentTargetStudentId = null;
     let draggedStudentId = null; 
+    let draggedItemId = null; // ⭐ 항목(행) 드래그용 식별자
     let currentFileHandle = null; 
     
     let selectedCells = new Set(); 
@@ -194,7 +201,7 @@
             scores[id] = {};
         }
         render();
-        addLog("팁: 이미지 업로드 시 자동 최적화가 적용되어 속도가 무척 빨라졌습니다! 🚀");
+        addLog("팁: 학생(열)과 항목(행) 모두 드래그 앤 드롭으로 자유롭게 순서를 바꿀 수 있습니다!");
     }
 
     document.addEventListener('keydown', async function(e) {
@@ -299,27 +306,55 @@
         render(); backupToLocal();
     }
 
-    // Drag & Drop
-    function handleDragStart(e, id) { draggedStudentId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); setTimeout(() => { const th = e.target.closest('th'); if (th) th.style.opacity = '0.5'; }, 0); }
+    // ⭐ 학생(열) Drag & Drop 처리
+    function handleDragStart(e, id) { draggedStudentId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'student|' + id); setTimeout(() => { const th = e.target.closest('th'); if (th) th.style.opacity = '0.5'; }, 0); }
     function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
     function handleDragEnter(e) { e.preventDefault(); const th = e.target.closest('th'); if (th && th.classList.contains('student-th')) th.classList.add('drag-over'); }
     function handleDragLeave(e) { const th = e.target.closest('th'); if (th && th.classList.contains('student-th') && !th.contains(e.relatedTarget)) th.classList.remove('drag-over'); }
     function handleDrop(e, targetId) {
         e.stopPropagation();
         const th = e.target.closest('th'); if (th && th.classList.contains('student-th')) th.classList.remove('drag-over');
+        const dragData = e.dataTransfer.getData('text/plain');
+        if (!dragData.startsWith('student|')) return false; // 항목 드래그 데이터가 섞이지 않도록 방지
+
         if (draggedStudentId && draggedStudentId !== targetId) {
             const draggedIdx = students.findIndex(s => s.id === draggedStudentId);
             const targetIdx = students.findIndex(s => s.id === targetId);
             if (draggedIdx !== -1 && targetIdx !== -1) {
                 const [dragged] = students.splice(draggedIdx, 1);
                 students.splice(targetIdx, 0, dragged);
-                addLog(`학생 배치 변경`);
+                addLog(`학생 배치 순서 변경됨`);
                 render(); backupToLocal();
             }
         }
         draggedStudentId = null; return false;
     }
     function handleDragEnd(e) { const th = e.target.closest('th'); if (th) th.style.opacity = '1'; document.querySelectorAll('.student-th').forEach(el => el.classList.remove('drag-over')); draggedStudentId = null; }
+
+    // ⭐ 평가 항목(행) Drag & Drop 처리
+    function handleRowDragStart(e, id) { draggedItemId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'item|' + id); setTimeout(() => { const tr = e.target.closest('tr'); if (tr) tr.style.opacity = '0.5'; }, 0); }
+    function handleRowDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+    function handleRowDragEnter(e) { e.preventDefault(); const tr = e.target.closest('tr'); if (tr && tr.draggable) tr.classList.add('drag-over-row'); }
+    function handleRowDragLeave(e) { const tr = e.target.closest('tr'); if (tr && tr.draggable && !tr.contains(e.relatedTarget)) tr.classList.remove('drag-over-row'); }
+    function handleRowDrop(e, targetId) {
+        e.stopPropagation();
+        const tr = e.target.closest('tr'); if (tr) tr.classList.remove('drag-over-row');
+        const dragData = e.dataTransfer.getData('text/plain');
+        if (!dragData.startsWith('item|')) return false; // 학생 드래그 데이터가 섞이지 않도록 방지
+        
+        if (draggedItemId && draggedItemId !== targetId) {
+            const draggedIdx = items.findIndex(i => i.id === draggedItemId);
+            const targetIdx = items.findIndex(i => i.id === targetId);
+            if (draggedIdx !== -1 && targetIdx !== -1) {
+                const [dragged] = items.splice(draggedIdx, 1);
+                items.splice(targetIdx, 0, dragged);
+                addLog(`평가 항목 순서 변경됨`);
+                render(); backupToLocal();
+            }
+        }
+        draggedItemId = null; return false;
+    }
+    function handleRowDragEnd(e) { const tr = e.target.closest('tr'); if (tr) tr.style.opacity = '1'; document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row')); draggedItemId = null; }
 
     function render() { renderTable(); renderRace(); }
 
@@ -343,7 +378,7 @@
             let crownHtml = isFirstPlace ? `<div class="table-crown">👑</div>` : '';
 
             headerRow.innerHTML += `
-                <th class="student-th" draggable="true" ondragstart="handleDragStart(event, '${student.id}')" ondragover="event.stopPropagation();" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${student.id}')" ondragend="handleDragEnd(event)">
+                <th class="student-th" draggable="true" ondragstart="handleDragStart(event, '${student.id}')" ondragover="event.stopPropagation(); handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${student.id}')" ondragend="handleDragEnd(event)">
                     <div class="student-profile" draggable="false">
                         ${crownHtml}
                         <img src="${student.img}" class="student-img" onclick="toggleMenu(event, '${student.id}')" draggable="false">
@@ -372,21 +407,31 @@
         } else {
             items.forEach((item, index) => {
                 let tr = document.createElement('tr');
-                let tdHtml = `<td class="item-first-col">
-                    <div class="row-delete-trigger" onclick="event.stopPropagation(); deleteItemAt(${index});" title="이 항목 삭제">
+                
+                // ⭐ 해당 행(tr)을 Draggable하게 설정
+                tr.draggable = true;
+                tr.ondragstart = (e) => handleRowDragStart(e, item.id);
+                tr.ondragover = handleRowDragOver;
+                tr.ondragenter = handleRowDragEnter;
+                tr.ondragleave = handleRowDragLeave;
+                tr.ondrop = (e) => handleRowDrop(e, item.id);
+                tr.ondragend = handleRowDragEnd;
+
+                let tdHtml = `<td class="item-first-col" title="드래그하여 항목 순서 변경">
+                    <div class="row-delete-trigger" onmousedown="event.stopPropagation();" onclick="event.stopPropagation(); deleteItemAt(${index});" title="이 항목 삭제">
                         <div class="row-delete-circle">-</div>
                     </div>`;
 
                 if (index === 0) {
-                    tdHtml += `<div class="row-insert-trigger row-insert-top" onclick="event.stopPropagation(); insertItemAt(0);" title="맨 위에 항목 추가"><div class="row-insert-circle">+</div></div>`;
+                    tdHtml += `<div class="row-insert-trigger row-insert-top" onmousedown="event.stopPropagation();" onclick="event.stopPropagation(); insertItemAt(0);" title="맨 위에 항목 추가"><div class="row-insert-circle">+</div></div>`;
                 }
                 
                 tdHtml += `
-                    <input type="text" class="item-name" value="${item.name}" onchange="updateItemName('${item.id}', this.value)"><br>
-                    <button class="btn btn-small btn-minus" tabindex="-1" onclick="addAllScore('${item.id}', -1)">-1</button>
-                    <button class="btn btn-small btn-blue" tabindex="-1" onclick="addAllScore('${item.id}', 1)">+1</button>
+                    <input type="text" class="item-name" value="${item.name}" onmousedown="event.stopPropagation();" onchange="updateItemName('${item.id}', this.value)"><br>
+                    <button class="btn btn-small btn-minus" tabindex="-1" onmousedown="event.stopPropagation();" onclick="addAllScore('${item.id}', -1)">-1</button>
+                    <button class="btn btn-small btn-blue" tabindex="-1" onmousedown="event.stopPropagation();" onclick="addAllScore('${item.id}', 1)">+1</button>
                     
-                    <div class="row-insert-trigger row-insert-bottom" onclick="event.stopPropagation(); insertItemAt(${index + 1});" title="아래에 항목 추가">
+                    <div class="row-insert-trigger row-insert-bottom" onmousedown="event.stopPropagation();" onclick="event.stopPropagation(); insertItemAt(${index + 1});" title="아래에 항목 추가">
                         <div class="row-insert-circle">+</div>
                     </div>
                 </td>`;
@@ -404,12 +449,12 @@
                     tr.innerHTML += `<td>
                         <input type="number" id="score_${student.id}_${item.id}" class="${scoreClass} ${isSelected}" value="${score}" 
                                title="Cmd(또는 Ctrl)+클릭으로 다중 선택"
-                               onmousedown="handleCellMouseDown(event, '${student.id}', '${item.id}')"
+                               onmousedown="event.stopPropagation(); handleCellMouseDown(event, '${student.id}', '${item.id}')"
                                onfocus="this.select()"
                                onchange="saveScore('${student.id}', '${item.id}', this.value)"
                                onkeydown="if(event.key === 'Enter') this.blur();">
-                        <button class="btn btn-small btn-minus" tabindex="-1" onclick="updateScore('${student.id}', '${item.id}', -1)">-</button>
-                        <button class="btn btn-small btn-blue" tabindex="-1" onclick="updateScore('${student.id}', '${item.id}', 1)">+</button>
+                        <button class="btn btn-small btn-minus" tabindex="-1" onmousedown="event.stopPropagation();" onclick="updateScore('${student.id}', '${item.id}', -1)">-</button>
+                        <button class="btn btn-small btn-blue" tabindex="-1" onmousedown="event.stopPropagation();" onclick="updateScore('${student.id}', '${item.id}', 1)">+</button>
                     </td>`;
                 });
                 scoreBody.appendChild(tr);
@@ -683,7 +728,7 @@
 
     function toggleLogs() { document.getElementById('logContainer').classList.toggle('active'); }
 
-    // ⭐ 이미지 파일 용량을 줄이기 위한 헬퍼 함수
+    // 이미지 파일 용량을 줄이기 위한 헬퍼 함수
     function compressDataURL(dataUrl) {
         return new Promise((resolve) => {
             if (!dataUrl.startsWith('data:image/')) {
@@ -710,12 +755,11 @@
 
                 resolve(canvas.toDataURL('image/jpeg', 0.8)); // 0.8 품질의 Jpeg로 압축
             };
-            img.onerror = () => resolve(dataUrl); // 실패 시 원본 리턴
+            img.onerror = () => resolve(dataUrl); 
             img.src = dataUrl;
         });
     }
 
-    // ⭐ 전체 학생의 기존 이미지를 150px로 자동 압축하여 JSON 용량을 혁신적으로 줄입니다.
     async function optimizeAllImages() {
         let optimizedCount = 0;
         for (let i = 0; i < students.length; i++) {
@@ -735,7 +779,6 @@
     }
 
     async function quickSaveJSON() {
-        // 저장 직전, 모든 이미지가 최적화되었는지 검사하고 압축을 실행합니다.
         await optimizeAllImages();
 
         const data = { title: document.getElementById('mainTitle').innerText, students, items, scores, studentCounter, logs };
@@ -807,7 +850,6 @@
     function escapeCSV(str) { return (typeof str === 'string' && (str.includes(',') || str.includes('"') || str.includes('\n'))) ? `"${str.replace(/"/g, '""')}"` : str; }
     
     async function saveCSV() {
-        // CSV 저장 전에도 이미지를 최적화하여 엑셀에서 버벅거림 방지
         await optimizeAllImages();
 
         let csvContent = "\uFEFF"; const currentTitle = document.getElementById('mainTitle').innerText;
