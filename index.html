@@ -27,10 +27,9 @@
     .table-container {
         position: relative;
         width: 100%;
-        max-height: 55vh; /* 화면의 절반 정도를 차지하도록 스크롤 높이 제한 */
-        min-height: 400px;
+        max-height: 680px; /* 6행까지는 스크롤 없이 다 보이고 7행부터 스크롤되도록 높이 제한 */
         margin-bottom: 20px;
-        overflow: auto; /* 가로, 세로 스크롤 모두 허용 */
+        overflow: auto; /* 내용이 넘칠 때만 스크롤 허용 */
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(82,160,95,0.1);
         background: white;
@@ -251,7 +250,14 @@
 <script>
     let students = [];
     let studentCounter = 1; 
-    let items = [{ id: 'item1', name: '숙제' }, { id: 'item2', name: '발표' }, { id: 'item3', name: '수업태도' }, { id: 'item4', name: '준비물' }];
+    let items = [
+        { id: 'item1', name: '숙제' }, 
+        { id: 'item2', name: '발표' }, 
+        { id: 'item3', name: '수업태도' }, 
+        { id: 'item4', name: '준비물' },
+        { id: 'item5', name: '협동' },
+        { id: 'item6', name: '배려' }
+    ];
     let scores = {}; 
     let logs = []; 
     let currentTargetStudentId = null;
@@ -435,7 +441,7 @@
         students.forEach(s => { totalsMap[s.id] = scores[s.id] ? Object.values(scores[s.id]).reduce((sum, val) => sum + val, 0) : 0; });
         let maxScore = Math.max(...Object.values(totalsMap), 0);
 
-        // ⭐ 좌측 상단 셀 강제 고정 (인라인 스타일에서 position 제거)
+        // 좌측 상단 셀 강제 고정 (인라인 스타일에서 position 제거)
         headerRow.innerHTML = `
             <th style="min-width: 100px;">
                 항목 / 학생
