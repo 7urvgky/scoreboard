@@ -23,26 +23,80 @@
     .editable-title { display: inline-block; font-size: 32px; font-weight: bold; color: #52a05f; border: 2px dashed transparent; padding: 5px 15px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
     .editable-title:hover { border-color: #52a05f; background-color: #fff; }
     
+    /* ⭐ 테이블 스크롤 및 틀고정을 위한 컨테이너 속성 변경 */
     .table-container {
         position: relative;
         width: 100%;
+        max-height: 55vh; /* 화면의 절반 정도를 차지하도록 스크롤 높이 제한 */
+        min-height: 400px;
         margin-bottom: 20px;
+        overflow: auto; /* 가로, 세로 스크롤 모두 허용 */
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(82,160,95,0.1);
+        background: white;
+        border: 1px solid #e9ecef;
     }
     
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(82,160,95,0.1); border: none; }
-    th, td { border: 1px solid #e9ecef; padding: 12px 10px; text-align: center; position: relative; }
-    th { background-color: #e6f7e9; color: #2d6636; font-size: 16px; transition: background-color 0.2s; }
+    /* 깔끔한 내부 스크롤바 디자인 */
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-track { background: #f8f9fa; border-radius: 15px; }
+    .table-container::-webkit-scrollbar-thumb { background: #c3e6cb; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-thumb:hover { background: #52a05f; }
     
-    /* 열(학생) 드래그 강조 효과 */
+    /* Sticky 틀고정을 위해 collapse 대신 separate 사용 */
+    table { 
+        width: 100%; 
+        border-collapse: separate; 
+        border-spacing: 0; 
+        background: white; 
+        border: none; 
+    }
+    th, td { 
+        border-bottom: 1px solid #e9ecef; 
+        border-right: 1px solid #e9ecef; 
+        padding: 12px 10px; 
+        text-align: center; 
+        position: relative; /* 기본 위치를 relative로 지정 (틀고정 셀 제외) */
+    }
+    th:last-child, td:last-child { border-right: none; }
+    
+    /* ⭐ 학생 행(1행 헤더) 상단 틀고정 */
+    th { 
+        background-color: #e6f7e9; 
+        color: #2d6636; 
+        font-size: 16px; 
+        transition: background-color 0.2s; 
+        position: sticky !important; 
+        top: 0; 
+        z-index: 30; /* 테이블 본문(상하 스크롤) 위로 고정 */
+        border-bottom: 2px solid #a8dadc; 
+    }
+    
+    /* ⭐ 1행 1열(항목/학생) 좌측 상단 교차점 완벽 틀고정 */
+    th:first-child {
+        left: 0;
+        z-index: 40 !important; /* 상하좌우 스크롤 시 가장 위에 덮이도록 */
+        border-right: 2px solid #a8dadc;
+    }
+    
     th.student-th { padding-top: 24px; cursor: grab; }
     th.student-th:active { cursor: grabbing; }
     th.student-th.drag-over { background-color: #c3e6cb; border: 2px dashed #52a05f; }
     
-    /* ⭐ 행(항목) 드래그 강조 효과 */
     tr.drag-over-row > td { background-color: #c3e6cb !important; border-top: 2px dashed #52a05f; border-bottom: 2px dashed #52a05f; }
-    .item-first-col { position: relative; padding-left: 20px; cursor: grab; }
+    
+    /* ⭐ 항목 열(1열) 좌측 틀고정 및 배경색 지정 (스크롤 시 내용 완벽 감춤) */
+    .item-first-col { 
+        position: sticky !important; 
+        left: 0; 
+        z-index: 20; 
+        background-color: #ffffff; 
+        border-right: 2px solid #dee2e6; 
+        padding-left: 20px; 
+        cursor: grab; 
+    }
     .item-first-col:active { cursor: grabbing; }
-    .item-name { cursor: text; } /* 입력창 텍스트 커서 유지 */
+    .item-name { cursor: text; } 
 
     .student-profile { position: relative; display: inline-block; }
     .student-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 3px solid #a8dadc; background-color: #f8f9fa; transition: transform 0.2s; }
@@ -82,7 +136,24 @@
     .item-name { border: 1px dashed transparent; background: transparent; font-weight: bold; text-align: center; width: 90px; color: #4a4a4a; font-size: 14px; padding: 3px; border-radius: 5px; }
     .item-name:hover, .item-name:focus { border-color: #52a05f; background: #fff; }
     
-    .total-row { background-color: #f8f9fa; font-weight: bold; }
+    /* ⭐ 총점 합계 행 하단 틀고정 */
+    .total-row td { 
+        background-color: #f1f3f5; 
+        font-weight: bold; 
+        position: sticky !important;
+        bottom: 0;
+        z-index: 25; 
+        border-top: 2px solid #dee2e6;
+        border-bottom: none;
+    }
+    
+    /* ⭐ 총점 1열(항목) 좌측 하단 교차점 틀고정 */
+    .total-row td:first-child {
+        left: 0;
+        z-index: 35 !important; /* 하단(25)보다 높고 우측 내용도 가리도록 */
+        border-right: 2px solid #dee2e6;
+    }
+    
     .total-score { font-size: 18px; color: #000000; }
     
     .race-container { background: #f0f9f1; padding: 25px 20px 15px; border-radius: 20px; position: relative; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(82,160,95,0.1); border: 4px solid #d4edda; }
@@ -180,12 +251,12 @@
 <script>
     let students = [];
     let studentCounter = 1; 
-    let items = [{ id: 'item1', name: '숙제' }, { id: 'item2', name: '발표' }];
+    let items = [{ id: 'item1', name: '숙제' }, { id: 'item2', name: '발표' }, { id: 'item3', name: '수업태도' }, { id: 'item4', name: '준비물' }];
     let scores = {}; 
     let logs = []; 
     let currentTargetStudentId = null;
     let draggedStudentId = null; 
-    let draggedItemId = null; // ⭐ 항목(행) 드래그용 식별자
+    let draggedItemId = null; // 항목(행) 드래그용 식별자
     let currentFileHandle = null; 
     
     let selectedCells = new Set(); 
@@ -201,7 +272,7 @@
             scores[id] = {};
         }
         render();
-        addLog("팁: 학생(열)과 항목(행) 모두 드래그 앤 드롭으로 자유롭게 순서를 바꿀 수 있습니다!");
+        addLog("팁: 표가 상/하/좌/우로 길어져도 학생과 합계, 항목명이 화면에 고정되어 편리하게 볼 수 있습니다!");
     }
 
     document.addEventListener('keydown', async function(e) {
@@ -306,7 +377,7 @@
         render(); backupToLocal();
     }
 
-    // ⭐ 학생(열) Drag & Drop 처리
+    // 학생(열) Drag & Drop 처리
     function handleDragStart(e, id) { draggedStudentId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'student|' + id); setTimeout(() => { const th = e.target.closest('th'); if (th) th.style.opacity = '0.5'; }, 0); }
     function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
     function handleDragEnter(e) { e.preventDefault(); const th = e.target.closest('th'); if (th && th.classList.contains('student-th')) th.classList.add('drag-over'); }
@@ -315,7 +386,7 @@
         e.stopPropagation();
         const th = e.target.closest('th'); if (th && th.classList.contains('student-th')) th.classList.remove('drag-over');
         const dragData = e.dataTransfer.getData('text/plain');
-        if (!dragData.startsWith('student|')) return false; // 항목 드래그 데이터가 섞이지 않도록 방지
+        if (!dragData.startsWith('student|')) return false; 
 
         if (draggedStudentId && draggedStudentId !== targetId) {
             const draggedIdx = students.findIndex(s => s.id === draggedStudentId);
@@ -331,7 +402,7 @@
     }
     function handleDragEnd(e) { const th = e.target.closest('th'); if (th) th.style.opacity = '1'; document.querySelectorAll('.student-th').forEach(el => el.classList.remove('drag-over')); draggedStudentId = null; }
 
-    // ⭐ 평가 항목(행) Drag & Drop 처리
+    // 평가 항목(행) Drag & Drop 처리
     function handleRowDragStart(e, id) { draggedItemId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'item|' + id); setTimeout(() => { const tr = e.target.closest('tr'); if (tr) tr.style.opacity = '0.5'; }, 0); }
     function handleRowDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
     function handleRowDragEnter(e) { e.preventDefault(); const tr = e.target.closest('tr'); if (tr && tr.draggable) tr.classList.add('drag-over-row'); }
@@ -340,7 +411,7 @@
         e.stopPropagation();
         const tr = e.target.closest('tr'); if (tr) tr.classList.remove('drag-over-row');
         const dragData = e.dataTransfer.getData('text/plain');
-        if (!dragData.startsWith('item|')) return false; // 학생 드래그 데이터가 섞이지 않도록 방지
+        if (!dragData.startsWith('item|')) return false; 
         
         if (draggedItemId && draggedItemId !== targetId) {
             const draggedIdx = items.findIndex(i => i.id === draggedItemId);
@@ -364,8 +435,9 @@
         students.forEach(s => { totalsMap[s.id] = scores[s.id] ? Object.values(scores[s.id]).reduce((sum, val) => sum + val, 0) : 0; });
         let maxScore = Math.max(...Object.values(totalsMap), 0);
 
+        // ⭐ 좌측 상단 셀 강제 고정 (인라인 스타일에서 position 제거)
         headerRow.innerHTML = `
-            <th style="position:relative; min-width: 100px;">
+            <th style="min-width: 100px;">
                 항목 / 학생
                 <div class="col-insert-trigger col-insert-right" onmousedown="event.stopPropagation();" onclick="event.stopPropagation(); insertStudentAt(0);" title="맨 앞에 학생 추가">
                     <div class="col-insert-circle">+</div>
@@ -408,7 +480,6 @@
             items.forEach((item, index) => {
                 let tr = document.createElement('tr');
                 
-                // ⭐ 해당 행(tr)을 Draggable하게 설정
                 tr.draggable = true;
                 tr.ondragstart = (e) => handleRowDragStart(e, item.id);
                 tr.ondragover = handleRowDragOver;
