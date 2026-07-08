@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>귀여운 학생 점수판</title>
+<!-- ⭐ 브라우저 탭 표시 아이콘(Favicon) 추가: 단일 파일 최적화 SVG 방식 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
 <style>
     body {
         font-family: 'Malgun Gothic', sans-serif;
@@ -301,7 +303,7 @@
 
     const defaultImg = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
 
-    // ⭐ 뒤로가기 및 앞으로가기 방지용 무한 히스토리 고정 장치 함수
+    // 뒤로가기 및 앞으로가기 방지용 무한 히스토리 고정 장치 함수
     function preventBackNavigation() {
         history.pushState(null, null, window.location.href);
         window.onpopstate = function() {
@@ -312,10 +314,10 @@
     }
 
     window.onload = function() {
-        // ⭐ 시작 시 바로 뒤로가기/앞으로가기 방지 작동
+        // 시작 시 바로 뒤로가기/앞으로가기 방지 작동
         preventBackNavigation();
 
-        // ⭐ 페이지를 새로고침하거나 실수로 창을 닫을 때 이탈 경고창 발생시킴
+        // 페이지를 새로고침하거나 실수로 창을 닫을 때 이탈 경고창 발생시킴
         window.addEventListener('beforeunload', function(e) {
             e.preventDefault();
             e.returnValue = ''; // 표준 브라우저 경고 팝업 활성화
@@ -1046,7 +1048,7 @@
         for(let r = headerRowIdx + 1; r < ret.length; r++) {
             if (ret[r].length < 2) continue;
             const id = 'std_' + Date.now() + '_' + r;
-            students.push({ id, name: ret[r][0], img: ret[r][1] || defaultImg }); scores[id] = {};
+            students.push({ id, name: r[r][0], img: ret[r][1] || defaultImg }); scores[id] = {};
             for(let i = 2; i < ret[r].length; i++) if (i - 2 < items.length) scores[id][items[i-2].id] = parseInt(ret[r][i]) || 0;
         }
         studentCounter = students.length + 1; selectedCells.clear(); lastClickedCell = null;
