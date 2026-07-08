@@ -23,16 +23,38 @@
     .editable-title { display: inline-block; font-size: 32px; font-weight: bold; color: #52a05f; border: 2px dashed transparent; padding: 5px 15px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
     .editable-title:hover { border-color: #52a05f; background-color: #fff; }
     
-    /* ⭐ 표 내부 스크롤을 제거하고 내용에 맞춰 자연스럽게 늘어나도록 속성 변경 */
+    /* ⭐ 테이블 스크롤 및 틀고정을 위한 컨테이너 속성 변경 */
     .table-container {
         position: relative;
         width: 100%;
+        max-height: 680px; /* 6행까지는 스크롤 없이 다 보이고 7행부터 스크롤되도록 높이 제한 */
         margin-bottom: 10px;
+        overflow: auto; /* 내용이 넘칠 때만 스크롤 허용 */
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(82,160,95,0.1);
         background: white;
         border: 1px solid #e9ecef;
+        opacity: 1;
+        /* ⭐ 슬라이딩 애니메이션 적용 */
+        transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, margin-bottom 0.4s ease-in-out, border-width 0.4s ease-in-out;
+        transform-origin: top;
     }
+    
+    /* ⭐ 점수표 숨김 시 적용될 클래스 */
+    .table-container.collapsed {
+        max-height: 0 !important;
+        margin-bottom: 0 !important;
+        border-width: 0 !important;
+        opacity: 0;
+        overflow: hidden !important; /* 스크롤바 숨김 */
+        pointer-events: none;
+    }
+    
+    /* 깔끔한 내부 스크롤바 디자인 */
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-track { background: #f8f9fa; border-radius: 15px; }
+    .table-container::-webkit-scrollbar-thumb { background: #c3e6cb; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-thumb:hover { background: #52a05f; }
     
     /* Sticky 틀고정을 위해 collapse 대신 separate 사용 */
     table { 
@@ -345,15 +367,17 @@
         }
     });
 
-    // ⭐ 점수표 감추기/보이기 기능
+    // ⭐ 점수표 감추기/보이기 애니메이션 기능
     function toggleTable() {
         const tableContainer = document.getElementById('tableContainer');
         const btn = document.getElementById('toggleTableBtn');
-        if (tableContainer.style.display === 'none') {
-            tableContainer.style.display = 'block';
+        
+        // collapsed 클래스를 토글하여 CSS 애니메이션(max-height, opacity)을 발생시킵니다.
+        if (tableContainer.classList.contains('collapsed')) {
+            tableContainer.classList.remove('collapsed');
             btn.innerHTML = '🔼 점수표 숨기기';
         } else {
-            tableContainer.style.display = 'none';
+            tableContainer.classList.add('collapsed');
             btn.innerHTML = '🔽 점수표 보이기';
         }
     }
