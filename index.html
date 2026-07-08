@@ -28,12 +28,13 @@
         position: relative;
         width: 100%;
         max-height: 680px; /* 6행까지는 스크롤 없이 다 보이고 7행부터 스크롤되도록 높이 제한 */
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         overflow: auto; /* 내용이 넘칠 때만 스크롤 허용 */
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(82,160,95,0.1);
         background: white;
         border: 1px solid #e9ecef;
+        transition: max-height 0.3s ease-in-out;
     }
     
     /* 깔끔한 내부 스크롤바 디자인 */
@@ -154,6 +155,26 @@
     }
     
     .total-score { font-size: 18px; color: #000000; }
+
+    /* 점수표 숨기기 토글 버튼 */
+    .toggle-table-btn {
+        background-color: #e6f7e9;
+        color: #2d6636;
+        border: 1px solid #c3e6cb;
+        padding: 6px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .toggle-table-btn:hover {
+        background-color: #c3e6cb;
+    }
     
     .race-container { background: #f0f9f1; padding: 25px 20px 15px; border-radius: 20px; position: relative; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(82,160,95,0.1); border: 4px solid #d4edda; }
     .race-track-field { position: relative; height: 160px; margin-top: 5px; background: rgba(255, 255, 255, 0.5); border-radius: 10px; border-bottom: 3px dashed #b1dfbb; }
@@ -218,11 +239,15 @@
 <input type="file" id="csvInput" accept=".csv" onchange="handleCSVSelect(event)">
 <input type="file" id="jsonInput" accept=".json" onchange="handleJSONFallback(event)"> 
 
-<div class="table-container">
+<div class="table-container" id="tableContainer">
     <table id="scoreTable">
         <thead><tr id="headerRow"></tr></thead>
         <tbody id="scoreBody"></tbody>
     </table>
+</div>
+
+<div style="text-align: center; margin-bottom: 20px;">
+    <button class="toggle-table-btn" id="toggleTableBtn" onclick="toggleTable()">🔼 점수표 숨기기</button>
 </div>
 
 <div class="race-container">
@@ -328,6 +353,19 @@
             }
         }
     });
+
+    // ⭐ 점수표 감추기/보이기 기능
+    function toggleTable() {
+        const tableContainer = document.getElementById('tableContainer');
+        const btn = document.getElementById('toggleTableBtn');
+        if (tableContainer.style.display === 'none') {
+            tableContainer.style.display = 'block';
+            btn.innerHTML = '🔼 점수표 숨기기';
+        } else {
+            tableContainer.style.display = 'none';
+            btn.innerHTML = '🔽 점수표 보이기';
+        }
+    }
 
     function backupToLocal() {
         try {
