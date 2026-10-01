@@ -218,19 +218,19 @@
 }
 @keyframes crownTilt {
     0%, 82%, 100% {
-        transform: rotate(0deg);
+        rotate: 20deg;
     }
 
     87% {
-        transform: rotate(-12deg);
+        rotate: 8deg;
     }
 
     92% {
-        transform: rotate(8deg);
+        rotate: 28deg;
     }
 
     96% {
-        transform: rotate(-3deg);
+        rotate: 17deg;
     }
 }
     
@@ -238,7 +238,30 @@
     .runner img { border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.15); background-color: #fff; display: block; margin: 0 auto; transition: width 0.3s, height 0.3s; }
     .runner .rank { background: #ff6b6b; color: white; border-radius: 10px; font-size: 10px; padding: 1px 5px; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; z-index: 5; }
     .runner-name { font-size: 11px; color: #2e7d32; font-weight: bold; margin-top: 2px; background: rgba(255,255,255,0.85); padding: 1px 4px; border-radius: 8px; display: inline-block; white-space: nowrap; }
-    .star-badge { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.9); z-index: 10; animation: popCrown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+   .star-badge {
+    position: absolute;
+    top: -35px;
+    right: -5px;
+    font-size: 36px;
+    z-index: 10;
+    pointer-events: none;
+    animation: floatBadge 1.5s ease-in-out infinite;
+}
+
+.star-badge-inner {
+    display: inline-block;
+    transform-origin: 50% 100%;
+    rotate: 10deg;
+    animation:
+        crownSparkle 1.2s ease-in-out infinite,
+        crownTilt 2.5s ease-in-out infinite;
+}
+
+@keyframes floatBadge {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
     
 .table-crown { 
     position: absolute; 
@@ -255,7 +278,6 @@
 
 .table-crown-inner {
     display: inline-block;
-    animation: crownTilt 2.5s ease-in-out infinite;
 }
 
     .row-insert-trigger { position: absolute; left: 0; right: 0; height: 20px; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; }
@@ -916,9 +938,11 @@ let crownHtml = isFirstPlace
             const runnerBottom = 20 + Math.floor(Math.random() * 51) - 25; 
             
 let crownBadgeHtml = (trueRank === 1 && student.total > 0)
-  ? `<div class="star-badge" style="top: -${imgSize/2 + 5}px; right: -5px; transform: rotate(20deg);">👑</div>`
+  ? `<div class="star-badge" style="top: -${imgSize/2 - 5}px; right: -5px;">
+        <span class="star-badge-inner">👑</span>
+     </div>`
   : '';
-
+    
             field.innerHTML += `
                 <div class="runner" style="left: ${leftPercentage}%; z-index: ${100 - trueRank}; bottom: ${runnerBottom}px; animation: floatFast ${(1.0 + Math.random() * 1.5).toFixed(2)}s ease-in-out ${(Math.random() * -2.0).toFixed(2)}s infinite;">
                     ${crownBadgeHtml}
