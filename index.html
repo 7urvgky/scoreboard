@@ -853,7 +853,9 @@
             leftPercentage = Math.max(5, Math.min(95, leftPercentage));
             const runnerBottom = 20 + Math.floor(Math.random() * 51) - 25; 
             
-            let crownBadgeHtml = (trueRank === 1 && student.total > 0) ? `<div class="star-badge" style="top: -${imgSize/2 + 15}px;">👑</div>` : '';
+let crownBadgeHtml = (trueRank === 1 && student.total > 0)
+  ? `<div class="star-badge" style="top: -${imgSize/2 + 5}px; right: -5px; transform: rotate(20deg);">👑</div>`
+  : '';
 
             field.innerHTML += `
                 <div class="runner" style="left: ${leftPercentage}%; z-index: ${100 - trueRank}; bottom: ${runnerBottom}px; animation: floatFast ${(1.0 + Math.random() * 1.5).toFixed(2)}s ease-in-out ${(Math.random() * -2.0).toFixed(2)}s infinite;">
